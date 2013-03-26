@@ -93,8 +93,6 @@ class Highlighter
 
   def highlight
     code = @file_parser.parse
-    style = Pygments.css
-    File.write("code.css", style)
     processed_code = code.map do |chunk|
       if chunk.is_a? Array
         Pygments.highlight(chunk.join, :lexer => 'scala')
@@ -104,13 +102,22 @@ class Highlighter
     end
     processed_code
   end
+
+  def css
+    Pygments.css
+  end
 end
 
-class Presentation 
+class Presentation
+  def initialize(fname, output_dir) 
+    @file_name = name
+    @output_dir = output_dir
+  end
+
   def generate
-    hl = Highlighter.new("#{Dir.pwd}/Deck.scala")
-    slide_template = File.read("#{Dir.pwd}/slide.template.html")
-    presentation_template = File.read("#{Dir.pwd}/presentation.template.html")
+    hl = Highlighter.new(@file_name)
+    slide_template = template_for "slide"
+    presentation_template = template_for "presentation"
     slides = hl.highlight.map do |slide|
       Mustache.render slide_template, :content => slide
     end
@@ -121,7 +128,22 @@ class Presentation
     File.write("#{Dir.pwd}/output.html", presentation)
     presentation
   end
+  
+  def output(path, content)
+  end
+
+  def template_for(template)
+    File.read("resources/templates/#{template}.template.html")
+  end
+
+  def resource_for(resource)
+    "resources/#{resource}"
+  end
 end
 
-p = Presentation.new
-p.generate
+if __FILE__ == $0
+  fname = ARGV[0]
+  outputd = ARGV[1]
+  pres = Presentation.new fname, outputd
+  pres.generate
+end
